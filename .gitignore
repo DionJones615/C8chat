@@ -1,0 +1,13 @@
+dist/
+node_modules/
+.tmp/
+coverage/
+.playwright/
+.env
+.env.*
+*.log
+*.xpi
+*.zip
+*.crx
+*.pem
+.DS_Store

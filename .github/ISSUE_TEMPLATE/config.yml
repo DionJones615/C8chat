@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/DionJones615/C8chat/security/policy
+    about: Report vulnerabilities privately, not in a public issue.
+  - name: Contributing guide
+    url: https://github.com/DionJones615/C8chat/blob/main/CONTRIBUTING.md
+    about: Setup, tests, browser checks, and pull-request expectations.

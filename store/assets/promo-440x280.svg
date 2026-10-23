@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="280" viewBox="0 0 440 280">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10162a"/>
+      <stop offset="1" stop-color="#1b2440"/>
+    </linearGradient>
+  </defs>
+  <rect width="440" height="280" fill="url(#bg)"/>
+  <g transform="translate(40 84) scale(0.875)">
+    <rect x="16" y="16" width="96" height="96" rx="22" fill="#141a2e" stroke="#2a3350" stroke-width="2"/>
+    <path d="M34 64c0-15 19-15 30 0s30 15 30 0-19-15-30 0-30 15-30 0z"
+          fill="none" stroke="#ffc94a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="182" y="142" font-family="DejaVu Sans, sans-serif" font-size="46" font-weight="700" fill="#ffffff">C8 Chat</text>
+  <text x="184" y="176" font-family="DejaVu Sans, sans-serif" font-size="14" fill="#ffc94a">Unofficial Castle Infinity companion</text>
+  <text x="184" y="202" font-family="DejaVu Sans, sans-serif" font-size="13" fill="#b9c2d8">Dock left, right, or float.</text>
+</svg>

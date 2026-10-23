@@ -1,0 +1,86 @@
+name: Publish to stores
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which store to publish to
+        type: choice
+        options: [amo, cws, both]
+        default: both
+      tag:
+        description: Release tag to publish (for example v1.0.0)
+        type: string
+        required: true
+      dry_run:
+        description: Build and verify without uploading
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: store-publish
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify versions
+        run: node scripts/check-version.mjs "${{ inputs.tag }}"
+      - run: npm run check
+      - name: Dry run
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "Dry run: not uploading to any store."
+          sha256sum dist/c8-chat-*.zip dist/c8-chat-*.xpi dist/SHA256SUMS
+      - name: Sign and submit to AMO
+        if: ${{ !inputs.dry_run && (inputs.target == 'amo' || inputs.target == 'both') }}
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          npx web-ext sign \
+            --source-dir dist/unpacked \
+            --artifacts-dir dist/signed \
+            --channel listed \
+            --api-key "$WEB_EXT_API_KEY" \
+            --api-secret "$WEB_EXT_API_SECRET" \
+            --no-input
+      - name: Upload signed AMO artifact
+        if: ${{ !inputs.dry_run && (inputs.target == 'amo' || inputs.target == 'both') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: c8-chat-signed-amo
+          path: dist/signed/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload and publish to Chrome Web Store
+        if: ${{ !inputs.dry_run && (inputs.target == 'cws' || inputs.target == 'both') }}
+        env:
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+        run: |
+          VERSION="$(node -p "JSON.parse(require('fs').readFileSync('manifest.json','utf8')).version")"
+          npx chrome-webstore-upload upload \
+            --source "dist/c8-chat-${VERSION}-chrome.zip" \
+            --extension-id "$CWS_EXTENSION_ID"
+          npx chrome-webstore-upload publish \
+            --extension-id "$CWS_EXTENSION_ID"
