@@ -86,6 +86,16 @@
   var agent = { hasFs: false, state: null, user: null };
   var players = { online: [], err: null, at: 0 };   // at: when it was last read
   var rooms = {};
+  // The room type is in connect.dat, not on the wire. A TEAM room is one that a
+  // TEAM record reaches and no ordinary record does — its only entrance is a TEAM
+  // entrance. The live file drops the destination for non-numeric TEAM tags and has
+  // no rows for 54/56; the older data confirms those five are TEAM-only, so they are
+  // kept as a small fallback rather than guessed at runtime.
+  var teamRow = {};
+  var teamIn = {};
+  var normalIn = {};
+  var TEAM_FALLBACK = { 25: 1, 52: 1, 53: 1, 54: 1, 56: 1 };
+  var teamAck = null;
   var roomsLoading = false;
   var headsLoading = false;
   var pending = new Map();
@@ -1161,8 +1171,10 @@
     }
     var was = mySector;
     mySector = n;
+    teamAck = null;            // a new room gets its own warning
     save();
     renderChatTargets();       // the "(here)" marks move with us, not with the feed
+    syncChatLock();
     if (was !== undefined) {
       flushAllSpeech();          // this room's open lines settle where they were written
       enterRoom();               // and every name we learned in it stops applying
@@ -1556,6 +1568,7 @@
 
   async function sendChat() {
     if (sending) return;
+    if (lockedHere()) return;      // the box is hidden; a stale Enter must not type
     var input = root.getElementById('chat-text');
     var text = input.value.trim();
     var to = pickedTarget().trim();
@@ -1880,8 +1893,24 @@
       dat.split(/\r?\n/).forEach(function (line) {
         var m = /^\s*(\d+)\s+'([0-9A-Za-z]{4})'\s+(\d+)\s+'([0-9A-Za-z]{4})'\s+(.*)$/.exec(line);
         if (!m) return;
+        // The four-character code is the transition's kind. A TEAM record is the
+        // team/nozzlebox transition, and a numeric TEAM address names the room on
+        // the other side ('0501' is room 5, '1901' is 19). A room is TEAM when one
+        // of those reaches it and no ordinary record does.
+        var src = Number(m[1]);
+        var code = m[2].toUpperCase();
+        var dest = Number(m[3]);
+        if (code === 'TEAM') {
+          teamRow[src] = 1;
+          if (/^\d{4}$/.test(m[4])) {
+            var to = Number(m[4].slice(0, 2));
+            if (to && to !== src) teamIn[to] = 1;
+          }
+        } else if (dest && dest !== src) {
+          normalIn[dest] = 1;
+        }
         var c = /\/\/\s*(\S.*?)\s*$/.exec(m[5]);
-        if (c) rooms[Number(m[1])] = c[1];
+        if (c) rooms[src] = c[1];
       });
       relabelRooms();
     } else if (++roomsTries < 5) {
@@ -1892,6 +1921,7 @@
       return;
     }
     renderChatTargets();
+    syncChatLock();            // a room restored from lastRoom locks once the map is read
   }
 
   /** The room's real name, from the comments in connect.dat. Nothing else is one. */
@@ -2713,6 +2743,55 @@
     try { toast('Panel error (' + where + '): ' + msg); } catch (ignore) { /* ignore */ }
   }
 
+  /* ------------------------------------------------------- TEAM room guard */
+
+  /** A room whose only entrance is a TEAM entrance. */
+  function teamRoom(n) {
+    if (n === undefined) return false;
+    if (TEAM_FALLBACK[n] === 1) return true;
+    return !normalIn[n] && (teamRow[n] === 1 || teamIn[n] === 1);
+  }
+
+  function lockedHere() {
+    return teamRoom(mySector) && teamAck !== mySector;
+  }
+
+  /** The hidden attribute, not the property: the panel's DOM stub only models attributes. */
+  function setHidden(node, hidden) {
+    if (!node) return;
+    if (hidden) node.setAttribute('hidden', '');
+    else node.removeAttribute('hidden');
+  }
+
+  /**
+   * A TEAM room hides the chat until the reader says OK. The guard belongs to the
+   * room, not the pane: every render and every move re-applies it, and the log keeps
+   * filling behind it so the transcript is complete when it is revealed.
+   */
+  function syncChatLock() {
+    if (!root) return;
+    var log = root.getElementById('chatlog');
+    var form = root.getElementById('chatform');
+    var lock = root.getElementById('chat-lock');
+    if (!log || !form || !lock) return;
+    var locked = lockedHere();
+    setHidden(log, locked);
+    setHidden(form, locked);
+    setHidden(lock, !locked);
+    if (!locked) return;
+    // The input just vanished under the caret; put the focus on the way back in.
+    var ok = root.getElementById('chat-lock-ok');
+    var active = root.activeElement;
+    if (ok && ok.focus && active && form.contains && form.contains(active)) ok.focus();
+  }
+
+  function acknowledgeTeam() {
+    teamAck = mySector;
+    syncChatLock();
+    var input = root.getElementById('chat-text');
+    if (input && input.focus) input.focus();
+  }
+
   function render() {
     // Each section is guarded: a throw here used to abort the redraw, which left the
     // gear looking broken because the sheet it should open never got built.
@@ -2774,11 +2853,19 @@
       el('input', { id: 'chat-text', placeholder: 'message', autocomplete: 'off' }),
       el('button', { id: 'chat-send', type: 'submit', text: 'Send' })
     ]));
+    pane.appendChild(el('div', { id: 'chat-lock', class: 'chatlock', role: 'status', hidden: true }, [
+      el('p', { class: 'chatlock-msg', text: 'This might be a little cheaty in this room' }),
+      el('button', {
+        type: 'button', id: 'chat-lock-ok', text: "That's OK",
+        onclick: acknowledgeTeam
+      })
+    ]));
     renderChatTargets();
     renderIrc();
     // a freshly built log starts at the top, but you want the newest line
     stick = true;
     stickToBottom(root.getElementById('chatlog'));
+    syncChatLock();
   }
 
   /**

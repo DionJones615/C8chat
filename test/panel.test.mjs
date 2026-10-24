@@ -1940,3 +1940,113 @@ test('a written departure is never rewritten by anything that happens later', ()
   assert.equal(leftOf().length, 1, 'no second line');
   assert.match(leftOf()[0], /LEFT: Timmy3XUJW/);
 });
+
+
+/* ------------------------------------------------------------ TEAM room guard */
+
+const TEAM_CONNECT = [
+  "47 'TEAM' 00 'NZBX' 'TRAN' 'TRAN' 'THNK' // Hall of Peril",
+  "48 'TEAM' 00 'NZBX' 'TRAN' 'TRAN' 'DIST' '0176' 0 // Gates of Peril",
+  "30 'GRIN' 48 '4801' 'TRAN' 'TRAN' 'DIST' '0181' 0 // Deadend",
+  "03 'TEAM' 00 '0501' 'TRAN' 'TRAN' 'DIST' 'S409' 0 // Control Room 1",
+  "17 'TEAM' 00 '1801' 'TRAN' 'TRAN' 'DIST' 'S437' 0 // Super Duper Seaquest 1",
+  "18 'TEAM' 00 '1901' 'TRAN' 'TRAN' 'DIST' '0403' 0 // Super Duper Seaquest 2",
+  "28 'TEAM' 00 'ENTR' 'TRAN' 'TRAN' 'DIST' '0381' 0 // Hall of Noses",
+  "43 'TEAM' 00 '1701' 'TRAN' 'TRAN' 'DIST' 'S435' 0 // Control Room Two",
+  "37 'LF01' 35 '3503' 'TRAN' 'TRAN' 'DIST' '0189' 0 // Central Fountain",
+  "36 'TOP1' 37 '3718' 'TRAN' 'TRAN' 'BACK' // Club Infinity",
+  "01 'FOUN' 37 '3718' 'TRAN' 'TRAN' 'STLA' 'S022' 0 // Your Room",
+  "90 'CENT' 91 'ENTR' 'PLAY' 'TRAN' 'INTR' // Demo 1",
+  "92 'HALL' 96 '2701' 'PLAY' 'TRAN' 'OCTS' // October: Staging Room",
+  "63 'TEAM' 00 'TmIn' 0 0 0 // Test Comm-Team Transition"
+].join('\n');
+
+const TEAM_ROOMS = [3, 5, 17, 18, 19, 25, 28, 43, 47, 52, 53, 54, 56, 63];
+const PUBLIC_ROOMS = [48, 37, 36, 1, 90, 92];
+
+const isHidden = (env, id) => env.el(id).getAttribute('hidden') !== null;
+const isVisible = (env, id) => env.el(id).getAttribute('hidden') === null;
+
+async function teamEnv(stored) {
+  const env = makeEnv(stored);
+  load(env);
+  gameReady(env);
+  await answerReads(env, { '/release/sys/connect.dat': TEAM_CONNECT });
+  return env;
+}
+
+test('a TEAM room hides the chat behind the warning until acknowledged', async () => {
+  const env = await teamEnv();
+  frame(env, [{ kind: 'room', room: 47 }]);
+
+  assert.ok(isHidden(env, 'chatlog'), 'the log is hidden');
+  assert.ok(isHidden(env, 'chatform'), 'the compose row is hidden');
+  assert.ok(isVisible(env, 'chat-lock'), 'the warning is in its place');
+  const message = env.el('chat-lock').children.find((c) => c.tagName === 'P');
+  assert.equal(message.textContent, 'This might be a little cheaty in this room');
+  assert.equal(env.el('chat-lock-ok').textContent, "That's OK");
+
+  env.el('chat-lock-ok').click();
+  assert.ok(isVisible(env, 'chatlog'), 'OK reveals the log');
+  assert.ok(isVisible(env, 'chatform'), 'OK reveals the compose row');
+  assert.ok(isHidden(env, 'chat-lock'), 'the warning goes away');
+});
+
+test('every confirmed TEAM room locks, including the fallback rooms', async () => {
+  const env = await teamEnv();
+  for (const room of TEAM_ROOMS) {
+    frame(env, [{ kind: 'room', room }]);
+    assert.ok(isHidden(env, 'chatform'), 'room ' + room + ' should lock');
+  }
+});
+
+test('public rooms with a TEAM exit stay public', async () => {
+  const env = await teamEnv();
+  for (const room of PUBLIC_ROOMS) {
+    frame(env, [{ kind: 'room', room }]);
+    assert.ok(isVisible(env, 'chatlog'), 'room ' + room + ' should keep the chat');
+    assert.ok(isVisible(env, 'chatform'));
+    assert.ok(isHidden(env, 'chat-lock'));
+  }
+});
+
+test('leaving and re-entering a TEAM room warns again', async () => {
+  const env = await teamEnv();
+  frame(env, [{ kind: 'room', room: 47 }]);
+  env.el('chat-lock-ok').click();
+  assert.ok(isVisible(env, 'chatform'));
+
+  frame(env, [{ kind: 'room', room: 37 }]);
+  assert.ok(isVisible(env, 'chatform'), 'the public room is unchanged');
+
+  frame(env, [{ kind: 'room', room: 47 }]);
+  assert.ok(isHidden(env, 'chatform'), 'a new visit gets a new warning');
+});
+
+test('a restored TEAM room locks once the map arrives', async () => {
+  const env = await teamEnv({ lastRoom: 47 });
+  assert.ok(isHidden(env, 'chatform'), 'the restored room is locked without a room frame');
+});
+
+test('a missing map fails open for the live rule, but the fallback rooms still lock', async () => {
+  const env = makeEnv();
+  load(env);
+  gameReady(env);
+  await answerReads(env, {});
+
+  frame(env, [{ kind: 'room', room: 37 }]);
+  assert.ok(isVisible(env, 'chatlog'), 'an unreadable map must not lock a public room');
+
+  frame(env, [{ kind: 'room', room: 25 }]);
+  assert.ok(isHidden(env, 'chatform'), 'the confirmed fallback list does not need the map');
+});
+
+test('the transcript keeps recording while a TEAM room hides it', async () => {
+  const env = await teamEnv();
+  frame(env, [{ kind: 'room', room: 47 }]);
+  assert.ok(isHidden(env, 'chatlog'));
+
+  env.el('chat-lock-ok').click();
+  assert.match(env.el('chatlog').textContent, /ENTERING Hall of Peril/);
+});
+

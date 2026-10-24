@@ -26,6 +26,9 @@ rights holder.
   the running game, and a 300-line local scrollback.
 - **Room presence** — the roster on arrival, plus joins, leaves, room changes,
   disconnects, and reconnects from the game's own traffic.
+- **TEAM-room guard** — in a room whose only entrance is a TEAM entrance (Hall of
+  Peril, the Super Duper Seaquest rooms, and the other confirmed TEAM rooms), the
+  chat is replaced by a dismissible notice; **That's OK** reveals it for that visit.
 - **Private messages** — choose a player from the recipient list, send a private
   message, and see the `(PM)` marker; players in your sector are marked `(here)`.
 - **Docking** — float, dock left, or dock right; placement, dock width, and

@@ -6,6 +6,14 @@ All notable changes to C8 Chat are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- TEAM rooms — the group-entering kind, whose only entrance is a TEAM entrance, such
+  as Hall of Peril — replace the chat with a dismissible "This might be a little
+  cheaty in this room" notice so the panel does not offer a shortcut there by
+  accident. **That's OK** reveals it for that room visit, and the transcript keeps
+  filling behind the notice.
+
 ## [1.1.0] - 2026-10-24
 
 ### Added

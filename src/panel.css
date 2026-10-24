@@ -343,6 +343,7 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
 /* -------------------------------------------------------------------- chat */
 
 /* Chat tab: the log takes whatever height the panel has and scrolls inside it. */
+.chatlog[hidden], .chatform[hidden], .chatlock[hidden] { display: none; }
 .chatlog {
   flex: 1;
   min-height: 0;
@@ -366,6 +367,25 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
   font-family: system-ui, sans-serif;
   font-size: calc(var(--log-size, 12px) + 1px);
 }
+
+/* The TEAM-room guard: the chat is replaced, not disabled, so the reader can
+   acknowledge the room and pick the transcript back up where it is. */
+.chatlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 18px;
+  text-align: center;
+  background: var(--logbg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: system-ui, sans-serif;
+}
+.chatlock p { margin: 0; color: var(--fg); }
+
 .irc { display: flex; gap: 6px; white-space: pre-wrap; word-break: break-word; }
 .irc .ts { color: var(--ts); flex: none; }
 .irc .nick { flex: none; }
@@ -693,7 +713,7 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
   color: var(--fg);
   min-width: 0;
 }
-.chatform button {
+.chatform button, .chatlock button {
   font: inherit;
   font-family: system-ui, sans-serif;
   padding: 3px 10px;

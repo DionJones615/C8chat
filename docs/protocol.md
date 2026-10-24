@@ -79,6 +79,13 @@ with `/api/players`.
   tracked: the `(here)` marks, the room name in the recipient list, the names and the
   faces. A `RECONNECTED` line is not a transition and still appears. No other room is
   affected, and the settings switch still hides presence everywhere.
+- **TEAM-room guard** — the room type is not on the wire; it is in `connect.dat`.
+  A room is TEAM when a `TEAM` record reaches it and no ordinary record does —
+  its only entrance is a TEAM (nozzlebox) entrance. In a TEAM room the log and the
+  compose row are replaced by "This might be a little cheaty in this room" and a
+  **That's OK** button; the transcript keeps filling behind the notice, and OK
+  reveals it until the room changes. A map that cannot be read leaves the chat
+  visible. (See "Room changes" for the full rule.)
 - **Chat** — the panel itself, IRC style. The scrollback is stored as plain data:
   entries hold `_msg`, the live DOM node a line is grown through, and
   `chrome.storage` refuses to clone a node — which rejected the whole set and made
@@ -379,6 +386,17 @@ and room 35 as "Central Fountain", and collides several numbers (1001, 0202, 360
 0101, 3718) onto two names each. Keyed correctly there are 53 rooms and no
 collisions. The four-character fields are tileset and transition codes and are no
 part of a room's name.
+
+**A room is TEAM when a `TEAM` record reaches it and no ordinary record does** — its
+only entrance is a TEAM (nozzlebox) entrance, which is the group-entering kind of
+room. Hall of Peril (47) is the example. Bridge of Death (48) carries the TEAM exit
+*to* Hall of Peril, but ordinary transitions from 25, 30 and 47 enter it as well, so
+it stays public. The live file drops the destination from the non-numeric TEAM tags
+(`NZBX`, `ENTR`) and has no rows for 54/56, so those five rooms (25, 52, 53, 54, 56)
+are kept as a confirmed fallback; the live rule resolves 3 Control Room 1, 5 Seaquest
+1, 17/18/19 Super Duper Seaquest, 28 Hall of Noses, 43 Control Room Two, 47 Hall of
+Peril and 63 Test Comm-Team Transition. In a TEAM room the guard replaces the chat
+(see Features); leaving and re-entering warns again, a same-room reconnect does not.
 
 ### Our own connection
 
