@@ -6,6 +6,8 @@ All notable changes to C8 Chat are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-24
+
 ### Added
 
 - TEAM rooms — the group-entering kind, whose only entrance is a TEAM entrance, such

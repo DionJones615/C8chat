@@ -3,8 +3,8 @@
     "c8-chat@dionjones615.github.io": {
       "updates": [
         {
-          "version": "1.1.0",
-          "update_link": "https://github.com/DionJones615/C8chat/releases/download/v1.1.0/c8-chat-1.1.0-firefox-signed.xpi",
+          "version": "1.2.0",
+          "update_link": "https://github.com/DionJones615/C8chat/releases/download/v1.2.0/c8-chat-1.2.0-firefox-signed.xpi",
           "applications": {
             "gecko": {
               "strict_min_version": "142.0"

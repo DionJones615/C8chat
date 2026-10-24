@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "C8 Chat",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "minimum_chrome_version": "121",
   "description": "Unofficial chat panel for Castle Infinity: room transcript, schtick heads, who is here, private messages, docked or floating.",
   "browser_specific_settings": {
