@@ -16,6 +16,10 @@ All notable changes to C8 Chat are documented here. The format follows
 
 ### Changed
 
+- Schtick heads scale as a percent of each head's own native size instead of
+  being stretched to a shared height or width, so differently shaped faces keep
+  their true proportions next to each other. The head-size setting is a
+  percentage now (50–200%); the old pixel choices fall back to the theme default.
 - The panel↔agent bridge marker is `__c8_chat__` (was `__c8_companion__`, an old
   name). A page that kept the previous build's agent across an extension reload is
   bridged by a small relay, so the panel works there without a tab reload.

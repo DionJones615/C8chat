@@ -21,7 +21,7 @@
   /* set by the panel from the settings; these are the defaults for a panel that
      somehow got built before applyLook ran */
   --log-size: 12px;
-  --head-px: calc(var(--log-size) * 1.5);
+  --head-zoom: 50%;
   font: 13px/1.45 system-ui, sans-serif;
   /* the game sets user-select:none on html/body, and `all: initial` makes us
      inherit it — so chat lines and capture hex would not be copyable */
@@ -390,21 +390,20 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
 .irc .ts { color: var(--ts); flex: none; }
 .irc .nick { flex: none; }
 .irc .msg { min-width: 0; }
-/* the schtick head, drawn from the game's own art: 38-50px frames, kept to one
-   line height so a face never changes how tall the log is. The height is a custom
-   property because the settings can raise it, and the name's line box follows it
-   so a taller face cannot sit off its own line. */
+/* the schtick head, drawn from the game's own art: 38-50px frames of varying
+   shapes. Each face renders at one percent of its own native size, so a tall head
+   and a wide one stay in true proportion to each other instead of being stretched
+   to a shared height or width. The percent is a custom property because the
+   settings can raise it. */
 .irc .head {
   flex: none;
-  height: var(--head-px, 18px);
-  width: auto;
+  zoom: var(--head-zoom, 50%);
   /* The face belongs to the name, so it sits on the first line of the message, not
      centred against however tall a wrapped message happens to be. */
   align-self: flex-start;
   margin-top: 1px;
   image-rendering: pixelated;
 }
-.irc .nick { line-height: var(--head-px, 18px); }
 
 /* room speech. The colour is `--fg` itself, not a token aliased to it: a custom
    property inherits its already-substituted value, so `--say: var(--fg)` on :host
@@ -434,15 +433,15 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
 
 /* ------------------------------------------------------------------ themes */
 
-/* Big heads: the face gets its own column at close to the art's native size and
-   the words ride a speech balloon beside it, so text uses the whole width right of
-   the face instead of the sliver an inline face leaves. Your own lines read from
+/* Big heads: the face gets its own column at one percent of the art's native size
+   and the words ride a speech balloon beside it, so text uses the whole width right
+   of the face instead of the sliver an inline face leaves. Your own lines read from
    the right, messenger style. The stamp is pinned over the row's corner, out of
    the flow entirely: revealing it cannot reflow the log, and it stays readable to
    assistive tech while hidden. The row's title carries the same time, so hovering
    anywhere on the line tells you when it was. */
 .panel.look-bighead {
-  --head-px: calc(var(--log-size) * 4);
+  --head-zoom: 125%;
   /* The balloon is drawn, not shipped: the game's own art is not redistributed,
      so only its palette is carried over from the files the panel used to embed
      (an 82x52 white body with a one-pixel black outline, and the radio's yellow
@@ -463,7 +462,9 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
 .panel.look-bighead .irc.say,
 .panel.look-bighead .irc.pm {
   display: grid;
-  grid-template-columns: var(--head-px) minmax(0, 1fr);
+  /* the column hugs the head itself: heads differ in shape, so the percent scale
+     leaves each one its own width rather than forcing a shared one */
+  grid-template-columns: max-content minmax(0, 1fr);
   grid-template-areas:
     'head nick'
     'head msg';
@@ -475,7 +476,7 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
 /* your own lines mirror: the label and the balloon right-aligned, avatar on the right */
 .panel.look-bighead .irc.say.out,
 .panel.look-bighead .irc.pm.out {
-  grid-template-columns: minmax(0, 1fr) var(--head-px);
+  grid-template-columns: minmax(0, 1fr) max-content;
   grid-template-areas:
     'nick head'
     'msg head';
@@ -493,8 +494,6 @@ h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(
 
 .panel.look-bighead .irc .head {
   grid-area: head;
-  width: 100%;
-  height: auto;
   margin-top: 2px;
 }
 

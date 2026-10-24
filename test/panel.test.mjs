@@ -326,7 +326,7 @@ test('settings controls expose associated label ids', () => {
   const env = makeEnv();
   load(env);
   openSettings(env);
-  for (const id of ['set-theme', 'set-size', 'set-ts', 'set-headpx']) {
+  for (const id of ['set-theme', 'set-size', 'set-ts', 'set-headpct']) {
     const control = env.el(id);
     assert.ok(control, 'missing settings control: ' + id);
     const labels = deepFindAll(env.document.documentElement, id);
@@ -1646,10 +1646,20 @@ test('text and head size are written onto the panel', () => {
   const panel = env.el('panel');
   setSel(env, 'set-size', '16');
   assert.equal(panel.style.getPropertyValue('--log-size'), '16px');
-  setSel(env, 'set-headpx', '32');
-  assert.equal(panel.style.getPropertyValue('--head-px'), '32px', 'an explicit size beats the theme');
-  setSel(env, 'set-headpx', '0');
-  assert.equal(panel.style.getPropertyValue('--head-px'), '', 'back to the theme default');
+  setSel(env, 'set-headpct', '150');
+  assert.equal(panel.style.getPropertyValue('--head-zoom'), '150%', 'an explicit percent beats the theme');
+  setSel(env, 'set-headpct', '0');
+  assert.equal(panel.style.getPropertyValue('--head-zoom'), '', 'back to the theme default');
+});
+
+test('an old build\'s px head size falls back to the theme default', () => {
+  // headPx held pixel heights (18/24/32/44); none of those numbers is a percent,
+  // so the choice is dropped rather than applied as one.
+  const env = makeEnv({ settings: { headPx: 32 } });
+  load(env);
+  const panel = env.el('panel');
+  assert.equal(panel.style.getPropertyValue('--head-px'), '', 'the old px property is not written');
+  assert.equal(panel.style.getPropertyValue('--head-zoom'), '', 'the face takes the theme\'s percent');
 });
 
 test('the chat log look is stored for the next session', () => {
@@ -1659,11 +1669,13 @@ test('the chat log look is stored for the next session', () => {
   setSel(env, 'set-theme', 'amber');
   setSel(env, 'set-size', '14');
   setSel(env, 'set-ts', 'hms');
+  setSel(env, 'set-headpct', '100');
   setChk(env, 'set-nicks', false);
   const last = env.saved[env.saved.length - 1].settings;
   assert.equal(last.theme, 'amber');
   assert.equal(last.chatSize, 14);
   assert.equal(last.tsFormat, 'hms');
+  assert.equal(last.headPct, 100);
   assert.equal(last.showNicks, false);
 });
 

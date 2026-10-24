@@ -28,7 +28,7 @@
       theme: 'bighead',      // the Default theme (labelled so in the picker)
       chatSize: 12,
       tsFormat: 'locale',
-      headPx: 0,             // 0 = whatever the theme asks for
+      headPct: 0,            // 0 = whatever the theme asks for; else percent of the art's native size
       showHeads: true,
       showNicks: true,
       nickColors: true,
@@ -53,7 +53,7 @@
   var PLACEMENTS = [['float', 'Floating'], ['left', 'Dock left'], ['right', 'Dock right']];
   var SIZES = [11, 12, 13, 14, 15, 16, 18];
   var TS_FMT = [['locale', 'Default'], ['hm', '24-hour'], ['hms', '24-hour + seconds'], ['h12', '12-hour'], ['off', 'Hidden']];
-  var HEAD_PX = [[0, 'Theme default'], [18, '18 px'], [24, '24 px'], [32, '32 px'], [44, '44 px']];
+  var HEAD_PCT = [[0, 'Theme default'], [50, '50%'], [100, '100%'], [150, '150%'], [200, '200%']];
   /* `locale` is what the panel has always shown — the browser's own 12- or 24-hour
      reading — so it stays the default and nobody's log changes under them. The rest
      pin it, which is the point of the setting. */
@@ -2709,9 +2709,11 @@
     THEMES.forEach(function (t) { p.classList.remove('look-' + t[0]); });
     p.classList.add('look-' + theme);
     p.style.setProperty('--log-size', clampSize(s.chatSize) + 'px');
-    var head = parseInt(s.headPx, 10) || 0;
-    if (head) p.style.setProperty('--head-px', head + 'px');
-    else p.style.removeProperty('--head-px');
+    // pick() also carries an old build's px choice (headPx 18/24/32/44) to the
+    // theme default: none of those numbers is a percent this build knows.
+    s.headPct = pick(HEAD_PCT, parseInt(s.headPct, 10) || 0);
+    if (s.headPct) p.style.setProperty('--head-zoom', s.headPct + '%');
+    else p.style.removeProperty('--head-zoom');
   }
 
   /**
@@ -2952,8 +2954,8 @@
       function (v) { S.settings.chatSize = v; look(); }));
     c.appendChild(selRow('timestamp', 'set-ts', S.settings.tsFormat, TS_FMT,
       function (v) { S.settings.tsFormat = v; look(); }));
-    c.appendChild(selRow('head size', 'set-headpx', parseInt(S.settings.headPx, 10) || 0, HEAD_PX,
-      function (v) { S.settings.headPx = v; look(); }));
+    c.appendChild(selRow('head size', 'set-headpct', pick(HEAD_PCT, parseInt(S.settings.headPct, 10) || 0), HEAD_PCT,
+      function (v) { S.settings.headPct = v; look(); }));
 
     c.appendChild(chkRow('set-heads', 'schtick heads — the speaker\'s own face, drawn from the game art', S.settings.showHeads !== false,
       function (on) { S.settings.showHeads = on; look(); }));
