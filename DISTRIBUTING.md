@@ -73,6 +73,11 @@ package once through the AMO Developer Hub:
    manifest already declares `data_collection_permissions: none`.
 5. After the add-on exists, run `sign-firefox.yml` for this and later versions.
 
+If the signing workflow created the add-on, open its entry in the AMO Developer
+Hub and complete the metadata (name, summary, MIT license, privacy-policy URL,
+and reviewer notes). `web-ext sign` does not set those for a new add-on; the
+manifest already declares `data_collection_permissions: none`.
+
 The signing workflow runs:
 
 ```sh
