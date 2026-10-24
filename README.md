@@ -17,10 +17,6 @@ C8 Chat is not affiliated with Castle Infinity, its preservation project, or any
 rights holder.
 
 <p align="center">
-  <img src="docs/images/c8-chat-panel.jpg" alt="C8 Chat panel showing room chat, a private message in a yellow balloon, and the message composer" width="360">
-</p>
-
-<p align="center">
   <img src="docs/images/c8-chat-in-game.jpg" alt="C8 Chat docked over Castle Infinity, showing the room transcript, speech balloons, and a private message beside the game" width="720">
 </p>
 
