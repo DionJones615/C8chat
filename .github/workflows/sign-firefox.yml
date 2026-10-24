@@ -1,0 +1,77 @@
+name: Sign Firefox (AMO unlisted)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to sign, for example v1.1.0
+        required: true
+        type: string
+      dry_run:
+        description: Build and verify without submitting to AMO
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: signing
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify versions
+        run: node scripts/check-version.mjs "${{ inputs.tag }}"
+      - run: npm run check
+      - name: Sign unlisted
+        if: ${{ !inputs.dry_run }}
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          npx web-ext sign \
+            --source-dir dist/unpacked \
+            --artifacts-dir dist/signed \
+            --channel unlisted \
+            --api-key "$WEB_EXT_API_KEY" \
+            --api-secret "$WEB_EXT_API_SECRET" \
+            --no-input
+      - name: Name signed assets
+        if: ${{ !inputs.dry_run }}
+        id: signed
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          XPI=$(find dist/signed -maxdepth 1 -type f -name '*.xpi' | head -1)
+          test -n "$XPI"
+          cp "$XPI" "dist/c8-chat-${VERSION}-firefox-signed.xpi"
+          cp "$XPI" "dist/c8-chat-firefox-signed.xpi"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "xpi=$XPI" >> "$GITHUB_OUTPUT"
+      - name: Append signed hashes
+        if: ${{ !inputs.dry_run }}
+        run: |
+          cd dist
+          sha256sum \
+            "c8-chat-${{ steps.signed.outputs.version }}-firefox-signed.xpi" \
+            c8-chat-firefox-signed.xpi >> SHA256SUMS
+      - name: Upload signed assets
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ inputs.tag }}" \
+            "dist/c8-chat-${{ steps.signed.outputs.version }}-firefox-signed.xpi" \
+            dist/c8-chat-firefox-signed.xpi \
+            dist/SHA256SUMS \
+            --clobber

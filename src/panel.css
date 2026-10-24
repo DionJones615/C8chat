@@ -1,0 +1,708 @@
+/* C8 Chat - panel styles (loaded into the shadow root). */
+
+:host {
+  all: initial;
+  --bg: #14141c;
+  --bg2: #1c1c27;
+  --line: #2e2e3e;
+  --fg: #d8d8e4;
+  --dim: #8b8b9e;
+  --accent: #ffd76e;
+  --danger: #ff8080;
+  /* The chat log's own ink. Every theme below is a swap of these and nothing else,
+     which is why the log rules name no colour directly. */
+  --logbg: #101018;
+  --ts: #5c5c70;
+  --say-out: #9ecbff;
+  --nick-out: #6f8fae;
+  --pm-nick: #d8a85e;
+  --pm-msg: #ffd9a0;
+  --pm-out: #c9a978;
+  /* set by the panel from the settings; these are the defaults for a panel that
+     somehow got built before applyLook ran */
+  --log-size: 12px;
+  --head-px: calc(var(--log-size) * 1.5);
+  font: 13px/1.45 system-ui, sans-serif;
+  /* the game sets user-select:none on html/body, and `all: initial` makes us
+     inherit it — so chat lines and capture hex would not be copyable */
+  user-select: text;
+}
+
+/* Visually hidden form names remain available to assistive technology. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* The game's own #help-btn and #players-btn sit at the top right in 30px circles
+   36px apart, so the launcher takes the next slot left of them in the same row.
+   The values below are theirs, read live off the page (see build()). */
+#toggle {
+  position: fixed;
+  top: var(--top-chrome-top, 6px);
+  right: calc(var(--top-chrome-right, 10px) + 72px);
+  z-index: 2147483646;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 79, 184, 0.22);
+  background: rgba(18, 12, 29, 0.5);
+  color: var(--accent);
+  font: 700 19px/1 Georgia, serif;
+  cursor: pointer;
+}
+#toggle:hover {
+  color: rgb(245, 183, 34);
+  border-color: rgba(245, 183, 34, 0.4);
+  background: rgba(28, 20, 48, 0.7);
+}
+/* open, the way the game's own #players-btn marks itself */
+#toggle[aria-expanded="true"] {
+  color: rgb(245, 183, 34);
+  border-color: rgba(245, 183, 34, 0.4);
+  background: rgba(28, 20, 48, 0.7);
+}
+
+/* Drops from the same top-right corner as the game's own panels, just below the
+   button row (30px button + 8px gap) so it reads as that row's fourth tab. */
+.panel {
+  position: fixed;
+  top: calc(var(--top-chrome-top, 6px) + 38px);
+  right: var(--top-chrome-right, 10px);
+  z-index: 2147483647;
+  /* A definite box, so the open tab can never change its size. Dragging or
+     resizing writes explicit numbers over these (see applyGeometry). */
+  width: min(360px, max(0px, calc(100vw - 20px)));
+  height: min(72vh, 640px, max(0px, calc(100vh - 60px)));
+  min-width: min(260px, max(0px, calc(100vw - 20px)));
+  min-height: min(220px, max(0px, calc(100vh - 60px)));
+  max-width: max(0px, calc(100vw - 20px));
+  max-height: max(0px, calc(100vh - 60px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  overflow: hidden;
+}
+.panel.hidden { display: none; }
+
+/* Title and tabs share one row, and the whole row is the drag handle: everything
+   in it that is not a button moves the panel. */
+header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 8px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+}
+.panel.dragging header, .panel.dragging { cursor: grabbing; }
+.brand {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.x {
+  background: none;
+  border: 0;
+  color: var(--dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.x:hover { color: var(--fg); }
+
+/* the only header button besides close: it opens the settings sheet */
+.cog {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--dim);
+  cursor: pointer;
+}
+.cog:hover { color: var(--fg); }
+.cog[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); background: var(--bg2); }
+
+.body { position: relative; flex: 1; min-height: 0; padding: 10px; overflow-y: auto; }
+
+/* the settings sheet: laid over the chat inside the panel, so opening it cannot
+   change the panel's size — which is the whole reason it is not a view swap */
+.sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.sheethead { justify-content: space-between; padding: 6px 8px 0; margin-bottom: 2px; }
+.sheethead .brand { flex: 1; }
+.sheetbody { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 10px 10px; }
+/* The debug button: a dim bug in the settings sheet's bottom-right corner. It is a
+   workbench, not a setting, so it is not a row among the switches — and it is not
+   in the chat either, where every corner already belongs to the scrollbar, a line
+   of text, or Send. It stays out of the way until it is reached for, lit on hover
+   and on the keyboard: a control nobody can find is not discreet, it is missing. */
+.sheetfoot {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px 6px;
+}
+.bug {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dim);
+  opacity: 0.4;
+  cursor: pointer;
+  transition: opacity 0.15s, color 0.15s;
+}
+.bug:hover, .bug:focus-visible { opacity: 1; color: var(--fg); }
+/* the chat pane fills the body and scrolls inside it, so the box never grows */
+.body.fill { display: flex; flex-direction: column; overflow: hidden; }
+.chatpane { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+/* grips: the header one moves, the corners resize */
+.movegrip {
+  padding: 0 2px 0 0;
+  color: var(--dim);
+  line-height: 1;
+  font: inherit;
+}
+.panel > .grip { position: absolute; width: 14px; height: 14px; z-index: 3; }
+.grip.nw { left: 0; top: 0; cursor: nwse-resize; }
+.grip.ne { right: 0; top: 0; cursor: nesw-resize; }
+.grip.sw { left: 0; bottom: 0; cursor: nesw-resize; }
+.grip.se { right: 0; bottom: 0; cursor: nwse-resize; }
+
+/* Docked, the panel is a full-height column and the only edge that can move is
+   the one facing the game. The corner grips and the move grip go; one edge handle
+   takes their place, lit on hover and focus the way the bug is. */
+.panel > .grip.edge { display: none; }
+.panel.dock-left > .grip.nw, .panel.dock-left > .grip.ne,
+.panel.dock-left > .grip.sw, .panel.dock-left > .grip.se,
+.panel.dock-right > .grip.nw, .panel.dock-right > .grip.ne,
+.panel.dock-right > .grip.sw, .panel.dock-right > .grip.se { display: none; }
+.panel.dock-left .movegrip, .panel.dock-right .movegrip { display: none; }
+.panel.dock-left header, .panel.dock-right header { cursor: default; }
+
+.panel.dock-left, .panel.dock-right {
+  box-sizing: border-box;
+  /* the stylesheet's definite-box caps would otherwise stop a full-height dock */
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.panel.dock-left { border-left: 0; }
+.panel.dock-right { border-right: 0; }
+
+.panel.dock-left > .grip.edge, .panel.dock-right > .grip.edge {
+  display: block;
+  /* below the header, so the close button's edge is never covered by the handle;
+     above the settings sheet, so the width stays adjustable while Settings is open */
+  top: 30px;
+  bottom: 0;
+  width: 8px;
+  height: auto;
+  z-index: 6;
+  background: var(--line);
+  opacity: 0.4;
+  transition: opacity 0.15s, background 0.15s;
+}
+.panel.dock-left > .grip.edge { right: 0; cursor: ew-resize; }
+.panel.dock-right > .grip.edge { left: 0; cursor: ew-resize; }
+.panel.dock-left > .grip.edge:hover, .panel.dock-left > .grip.edge:focus-visible,
+.panel.dock-right > .grip.edge:hover, .panel.dock-right > .grip.edge:focus-visible {
+  opacity: 1;
+  background: var(--accent);
+}
+/* the dragging cursor runs the full width of a docked panel */
+.panel.dock-left.dragging, .panel.dock-left.dragging header { cursor: ew-resize; }
+.panel.dock-right.dragging, .panel.dock-right.dragging header { cursor: ew-resize; }
+
+/* The placement row at the top of Settings: three icon buttons, the active one
+   lit the way the cog is when its sheet is open. */
+.dockrow { gap: 6px; }
+.dockbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 28px;
+  padding: 0;
+}
+.dockbtn[aria-pressed="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg2);
+}
+
+.row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+
+button {
+  font: inherit;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  color: var(--fg);
+  cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button.primary { border-color: var(--accent); color: var(--accent); }
+button.danger { border-color: var(--danger); color: var(--danger); }
+
+input, select {
+  font: inherit;
+  padding: 4px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  color: var(--fg);
+}
+
+h4 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; color: var(--dim); letter-spacing: .06em; }
+.hint { font-size: 11px; color: var(--dim); }
+/* a settings switch is its own line; inline, a row of them runs together into a
+   paragraph and it stops being obvious which box belongs to which label */
+.sheetbody .chk { display: block; margin-bottom: 3px; }
+
+
+.frame { padding: 5px 0; border-bottom: 1px solid var(--line); }
+.frame code {
+  display: block;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--dim);
+  word-break: break-all;
+  max-height: 48px;
+  overflow: hidden;
+}
+.frame .strs { font-size: 11px; color: var(--accent); word-break: break-word; }
+
+.toast {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: rgba(20, 20, 28, .96);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none; }
+  .bug { transition: none; }
+  .panel.look-bighead .irc .ts { transition: none; }
+}
+
+/* -------------------------------------------------------------------- chat */
+
+/* Chat tab: the log takes whatever height the panel has and scrolls inside it. */
+.chatlog {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 6px;
+  background: var(--logbg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--log-size, 12px);
+  line-height: 1.5;
+  scrollbar-width: thin;
+}
+
+/* An empty log is not a broken log: say so instead of showing a blank box. */
+.chatlog:empty::before {
+  content: "No lines yet. The log fills as the castle talks.";
+  display: block;
+  padding: 6px 2px;
+  color: var(--dim);
+  font-family: system-ui, sans-serif;
+  font-size: calc(var(--log-size, 12px) + 1px);
+}
+.irc { display: flex; gap: 6px; white-space: pre-wrap; word-break: break-word; }
+.irc .ts { color: var(--ts); flex: none; }
+.irc .nick { flex: none; }
+.irc .msg { min-width: 0; }
+/* the schtick head, drawn from the game's own art: 38-50px frames, kept to one
+   line height so a face never changes how tall the log is. The height is a custom
+   property because the settings can raise it, and the name's line box follows it
+   so a taller face cannot sit off its own line. */
+.irc .head {
+  flex: none;
+  height: var(--head-px, 18px);
+  width: auto;
+  /* The face belongs to the name, so it sits on the first line of the message, not
+     centred against however tall a wrapped message happens to be. */
+  align-self: flex-start;
+  margin-top: 1px;
+  image-rendering: pixelated;
+}
+.irc .nick { line-height: var(--head-px, 18px); }
+
+/* room speech. The colour is `--fg` itself, not a token aliased to it: a custom
+   property inherits its already-substituted value, so `--say: var(--fg)` on :host
+   would freeze the dark theme's ink and no theme could change it — which is exactly
+   what left Paper's messages pale blue on cream. */
+.irc.say .msg { color: var(--fg); }
+.irc.say.out .msg { color: var(--say-out); }
+.irc.say.out .nick { color: var(--nick-out); }
+
+/* private messages are tinted so they never read as room talk */
+.irc.pm .nick { color: var(--pm-nick); }
+.irc.pm .msg { color: var(--pm-msg); }
+.irc.pm.out .msg { color: var(--pm-out); }
+
+.irc.sys { color: var(--dim); }
+.irc.sys .msg { color: var(--dim); font-weight: 600; }
+
+/* ------------------------------------------------------- what the log shows */
+
+/* Switched off is hidden, not dropped: the line stays in the scrollback, in the
+   stored transcript and in the accessibility tree's reading order either way. */
+/* The switches are a snapshot taken when a line is written, not a live filter, so
+   turning one off never restyles the history you were reading. What a line was born
+   without, it keeps: no face, no name, no tint, or not shown at all. */
+.panel .irc.hidden-line { display: none; }
+.panel .irc.no-nick .nick { display: none; }
+
+/* ------------------------------------------------------------------ themes */
+
+/* Big heads: the face gets its own column at close to the art's native size and
+   the words ride a speech balloon beside it, so text uses the whole width right of
+   the face instead of the sliver an inline face leaves. Your own lines read from
+   the right, messenger style. The stamp is pinned over the row's corner, out of
+   the flow entirely: revealing it cannot reflow the log, and it stays readable to
+   assistive tech while hidden. The row's title carries the same time, so hovering
+   anywhere on the line tells you when it was. */
+.panel.look-bighead {
+  --head-px: calc(var(--log-size) * 4);
+  /* The balloon is drawn, not shipped: the game's own art is not redistributed,
+     so only its palette is carried over from the files the panel used to embed
+     (an 82x52 white body with a one-pixel black outline, and the radio's yellow
+     starburst). Ink matches the art too — dark on the balloon, blue for your own
+     words, brown on the radio. */
+  --balloon-fill: #ffffff;
+  --balloon-line: #000000;
+  --balloon-ink: #1b1b1b;
+  --balloon-out-ink: #1d4f8c;
+  --radio-ink: #4a3a10;
+  --radio-out-ink: #6b4711;
+}
+
+/* every row pins its own stamp corner */
+.panel.look-bighead .irc { position: relative; }
+
+/* The speech row: avatar column, the name as a label, the message as the balloon. */
+.panel.look-bighead .irc.say,
+.panel.look-bighead .irc.pm {
+  display: grid;
+  grid-template-columns: var(--head-px) minmax(0, 1fr);
+  grid-template-areas:
+    'head nick'
+    'head msg';
+  column-gap: 8px;
+  align-items: start;
+  margin: 3px 0;
+}
+
+/* your own lines mirror: the label and the balloon right-aligned, avatar on the right */
+.panel.look-bighead .irc.say.out,
+.panel.look-bighead .irc.pm.out {
+  grid-template-columns: minmax(0, 1fr) var(--head-px);
+  grid-template-areas:
+    'nick head'
+    'msg head';
+}
+
+/* No art yet (a face arrives with the actor frames), or heads switched off: the
+   text takes the avatar's column back. */
+.panel.look-bighead .irc.say:not(:has(.head)),
+.panel.look-bighead .irc.pm:not(:has(.head)) {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'nick'
+    'msg';
+}
+
+.panel.look-bighead .irc .head {
+  grid-area: head;
+  width: 100%;
+  height: auto;
+  margin-top: 2px;
+}
+
+/* the name is a label over the balloon, not a cap on it: the balloon belongs to
+   the words alone, which is what the art did */
+.panel.look-bighead .irc .nick {
+  grid-area: nick;
+  justify-self: start;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+  font-size: .9em;
+  padding: 0 2px 2px;
+}
+.panel.look-bighead .irc.out .nick { justify-self: end; }
+
+/* The message: a filled balloon with a one-pixel outline, and the same drawn tail
+   on whichever side its speaker is. box-sizing keeps the outline from adding two
+   pixels to a line that already fills the log. */
+.panel.look-bighead .irc.say .msg,
+.panel.look-bighead .irc.pm .msg {
+  grid-area: msg;
+  position: relative;
+  justify-self: start;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 9px 5px;
+  border: 1px solid var(--balloon-line);
+  border-radius: 10px;
+  background: var(--balloon-fill);
+  color: var(--balloon-ink);
+}
+.panel.look-bighead .irc.say.out .msg,
+.panel.look-bighead .irc.pm.out .msg { justify-self: end; }
+.panel.look-bighead .irc.say.out .msg { color: var(--balloon-out-ink); }
+/* A private message wears the game's own radio starburst. That artwork is kept —
+   it is the one thing that says "this is not room talk" at a glance, and no drawn
+   shape replaces it — so this is the only art the extension ships. */
+.panel.look-bighead .irc.pm .msg {
+  border: 0;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANYAAACACAYAAAB3NJfEAAAG3UlEQVR42u2dO3bcMAxFvS5XbrMEl+nSufAOsodsJJV3kIVkDamZA5+RwnD04QcASc3VObdLLA2JxwdAlPT0dJ0jXPRczANz1vd4eXkJtwEMDpMUOk7WyMEbRrueKC44agcy/Pke3t/fzQNfzvHx9txjwsKvH1+GC2AJXhn7WxAPcT0yP3JNv39+Q1itAyqDKIMpSABarVZLIEXB5DFxa7A4n/dU6Mk1dXWnOAYQlkHAxwNrEIQe5zj9bR3dK2xdTwdh/edOWwzo8POmg1tI8CumiXcro/Ekbp7PS9RHLtVBWLvuNKuwehftTZOeDnZrMIpI9/5+JGAzt0pxqPnC2XXcfrdp/B2Ne6dx0QlauVAZ4KQLF0ZOBy0EdnYeRSfJ/j2G7pW1YGkvKLE75Zzf6Zr8ahj50fIDNsQWRkoHldPEbPE2jEVVQCkGUyhZqBTdocqdOriof9BKsHZyt+rVLQmOUFv3aAVdSVAfuJfbOCrUM03u1LHusyuicyfbw91aArIgTTzsRp1MdLAe6wb3CrXjVyms1Z00fu+0wtKwZwd3U722vV0dtQGYUwtpjnPBvZwmtyi8Z6TuTjMLS8UNPNzNYgFI67DWsTiovyyDLGi6VKGwTN3JSVhmZY3LgLS6m+UCsKSJBoJtdo2KdE31fEfCtXanguspEc4aa8vN6KhMGKc54OFuXq6q/Rs8g89qnKKA+wzKr69Pbu5UIvQ98UgMyRycXbNJE84izYLr0MudjkSQCidHPO73xmZ0BICO6eUcdRZAL6z3Hg5XZwFM2mUkHYTHxuvZLgYbcKvRtjcB0LRQ3CsHMCOuj59QZwFuRZ0FMGSLnToLaFp4HWxvAlrs1FkA0zzPxQQATQu2NwFM8iIa0kHArUgHAcxb7EEDJgJoWlAjAbi12BEXgFGLnV0UAEZNC8QFtNjp8AFM1GLnvhTQYkdcAHPtC0Rc8GhtdsQFYCuuwDNXALYCC7w4BsD48008HgJg8PkmbiADTNSWR1xAW57dGQAT3USmDQ+4FeICmOvFnYgLcCvEBeDuVjnvt2B3BuBWta30heXr4sLX139fHo+R/4OoALcirQPoU1vhQAA2nUB2VwAYdQIZWMCtLO5bUW8BbsWXRACm2mVBvQW4FTsrACbaE0gLHnArUkKA8d2KFjzgVtRbAFO5FS14wK2otwDmExYpIQQ+kUoLHmAe1yIlBFyLFjzAVK5FvQW4FsICoPUOEC75oW86g/CoyJvJaFwAXMS12NoE4UG+5kjDAmBm16JhAY/4DWLcCmA212KgAdfSFtXH2zMDDbgWbgWgg5iKhbhorwOupS0sGhYAfH0EYHzXYj8ggL5rMZgA2t8kpmEBoOxaNCwA9F2LhgWAtmvhVgD6rsWgAWy8ZEYQp5JOuYjqJqzQvB9w+cPyb5Y/LNCSh6uIJ43vm3BS6jqBqXBy/jjigovUTOpbl6r/MDUZsMGWJ4oBhhcXN5GBG7/ah7x7jQkBXjHNoyQAQ79mmsGHRxFXoK4CmLWpwf0qoKlBXQUwfFODAQbqLuWmBjeBAZSbGiabbCVvXS6QyYKQ+UbaeA+rIM0FiSXBc/FvfjuuVl0lP/z2Ma+t/YhT594yRnRKu35SZ3OjePoERixADRG2NDWaTrqsMBkbe6cV1PK7RhfXcr1eqZLFWCjUN6cCLHXBmqZGkaoLheQqLM2gSgWl6e5Lemy4CJjXy/F5LMoIxx0RRS6Ye12nH0CQyWkQklsbP3UV46K1+sMRSVqhuuJv3OQ0ezh1Z3w+x05L0CN81b7qcautANQUkoewdorLqoAtLFS1AlLNvfYCUTPYM9MitTRxxOensgJDBml5ktjqyUoLYZ0VlCUrdW3np9QNTlbg5uA/C3YtdyyoN0LrZ6G670IvFZWHkCyEFbfvW8+lsD8sWwyZAVKdumV2rlTcsSLY1zqsZvGYQlzeO3m1nus6aiaUpmqRoILXYlFyrprU7XaLw+zvK+6pq6rDhnk4ccSjdjWuXAzuJi95kYjbbpWTezMq7lUzPsbumCWwkvQUcSl10hrveq/ny00fLVyrNY3JWd0bzlGVGio/YlHUrh/1hTBTCEtrZSp92aLFs2tKLePDwNOoFUucwzC4s9LEwdrw47+QxsBZQs+nrZW/wr4bdB7iVUhtVdNExJUhrIrGxPA1pGEn624cte81njlGSaNEI03cy3QQ14GwriCoLdcynvS1NjIq6Edzi7Dn2Igr6Z4pp0lPI93OcOxeWbrHbmOjczDfpYmP3sxYX0Z/8YHw/n3ujZlBXGIV2Gy7Myx3e3BMNndx/Tji5tirZkCjdeg4jNLcwd2BhZuDVNd42x4HB9nHbMdfkOHFEw9vis4AAAAASUVORK5CYII=") 0 0 / 100% 100% no-repeat;
+  aspect-ratio: 214 / 128;
+  width: fit-content;
+  min-width: 132px;
+  max-width: min(260px, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--radio-ink);
+  padding: 12px 22px;
+}
+.panel.look-bighead .irc.pm.out .msg { color: var(--radio-out-ink); }
+
+/* the tail points at the speaker's face: its outline is drawn first and the fill
+   sits one pixel inside it, so the two read as one outlined shape and the fill
+   covers the balloon's border across the throat, leaving no line there */
+.panel.look-bighead .irc.say .msg::before {
+  content: '';
+  position: absolute;
+  /* A one-line balloon is only ~26px tall, so a tail pinned 7px from the top hangs
+     out of its bottom corner. min() centres it while the box is short and leaves it
+     at the speaker's first line once the balloon grows. */
+  top: min(7px, calc(50% - 9px));
+  left: -9px;
+  border: 9px solid transparent;
+  border-left-width: 0;
+  border-right-color: var(--balloon-line);
+}
+.panel.look-bighead .irc.say .msg::after {
+  content: '';
+  position: absolute;
+  top: min(8px, calc(50% - 8px));
+  left: -7px;
+  border: 8px solid transparent;
+  border-left-width: 0;
+  border-right-color: var(--balloon-fill);
+}
+
+/* your own lines mirror both layers */
+.panel.look-bighead .irc.say.out .msg::before {
+  left: auto;
+  right: -9px;
+  border-right-width: 0;
+  border-left-width: 9px;
+  border-left-color: var(--balloon-line);
+}
+.panel.look-bighead .irc.say.out .msg::after {
+  left: auto;
+  right: -7px;
+  border-right-width: 0;
+  border-left-width: 8px;
+  border-left-color: var(--balloon-fill);
+}
+
+/* and there is no tail without a face to point at. A private message never has
+   one: the starburst is the whole shape. */
+.panel.look-bighead .irc.say:not(:has(.head)) .msg::before,
+.panel.look-bighead .irc.say:not(:has(.head)) .msg::after { display: none; }
+
+/* The stamp is pinned over the row's corner, out of the flow, and revealed on
+   hover: landing it in the grid would reflow the balloon every time it showed.
+   No text-shadow — over a balloon it would smear on white. */
+.panel.look-bighead .irc .ts { opacity: 0; transition: opacity .12s; position: absolute; top: 1px; right: 2px; z-index: 1; }
+.panel.look-bighead .irc.out .ts { right: auto; left: 2px; }
+.panel.look-bighead .irc:hover .ts,
+.panel.look-bighead .irc:focus-within .ts { opacity: 1; }
+
+.panel.look-paper {
+  /* the hashed speaker colours are mixed for a dark log; on cream they need to be
+     darker or they read as grey */
+  --nick-l: 42%;
+  --bg: #efe9dc;
+  --bg2: #e4dccb;
+  --line: #c9bfa8;
+  --fg: #2b2620;
+  --dim: #6f6555;
+  --accent: #8a5a12;
+  --danger: #a03030;
+  --logbg: #fbf7ee;
+  --ts: #8d8271;
+  --say-out: #1d4f8c;
+  --nick-out: #5b7590;
+  --pm-nick: #8a5a12;
+  --pm-msg: #6b4711;
+  --pm-out: #7a5a20;
+}
+
+.panel.look-amber {
+  --bg: #100c06;
+  --bg2: #1a1409;
+  --line: #3a2c12;
+  --fg: #ffb000;
+  --dim: #9a7a3a;
+  --accent: #ffc94a;
+  --danger: #ff6a4a;
+  --logbg: #070502;
+  --ts: #8a6a2a;
+  --say-out: #7ce08a;
+  --nick-out: #6f9a6a;
+  --pm-nick: #ffd27a;
+  --pm-msg: #ffdf9a;
+  --pm-out: #c9a978;
+}
+
+.chatform {
+  /* The compose row is as wide as the panel, not as wide as the window, so it
+     lays itself out from its own box: the recipient picker gets a whole row and
+     the message keeps the rest. A flex row squeezed the picker until its label
+     was cut mid-word ("Say (nearby playe") on any panel narrower than ~420px. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "recipient recipient" "message send";
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg2);
+}
+/* The recipient picker: a button as the face and a listbox under it. A native
+   <select> is one text run per option, so the room could not be dimmed and
+   flushed right inside the row — the two things that make it readable. The value
+   itself sits in a hidden input, so the form still owns what gets sent. */
+.chatform #chat-to-wrap { grid-area: recipient; position: relative; min-width: 0; z-index: 1; }
+.chatform #chat-to-face {
+  width: 100%; min-width: 0; box-sizing: border-box;
+  display: flex; align-items: baseline; gap: 10px;
+  text-align: left; cursor: pointer;
+  /* it wears the same clothes as the text field beside it, not the Send button's */
+  font: inherit; padding: 3px 6px;
+  border-radius: 5px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--fg);
+}
+.chatform #chat-to-face:hover { border-color: var(--dim); }
+.chatform .to-nick {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The room: dimmer than the name, and the row is what aligns it, not a divider. */
+.chatform .to-room {
+  flex: 0 1 auto; min-width: 0; margin-left: auto;
+  color: var(--dim); text-align: right;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chatform #chat-to-list {
+  position: absolute; left: 0; right: 0; bottom: calc(100% + 4px);
+  max-height: 40vh; overflow-y: auto; z-index: 2;
+  margin: 0; padding: 3px;
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+.chatform #chat-to-list[hidden] { display: none; }
+.chatform .to-group {
+  padding: 5px 6px 2px; color: var(--dim);
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.chatform .to-item {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 3px 6px; border-radius: 4px; cursor: pointer;
+}
+.chatform .to-item:hover, .chatform .to-item.active { background: rgba(255, 255, 255, 0.07); }
+.chatform .to-item[aria-selected="true"] .to-nick { color: var(--accent); }
+.chatform #chat-text { grid-area: message; width: 100%; box-sizing: border-box; }
+.chatform button { grid-area: send; }
+.chatform input, .chatform select {
+  font: inherit;
+  padding: 3px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  min-width: 0;
+}
+.chatform button {
+  font: inherit;
+  font-family: system-ui, sans-serif;
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--accent);
+  background: var(--bg2);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* The speech balloon is drawn from the art's palette rather than redistributed.
+   The radio starburst above is the one exception, and it is deliberate. */

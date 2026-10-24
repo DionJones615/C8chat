@@ -1,0 +1,40 @@
+{
+  "name": "c8-chat",
+  "version": "1.1.0",
+  "description": "Unofficial chat panel for Castle Infinity: room transcript, schtick heads, who is here, private messages, docked or floating.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DionJones615/C8chat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DionJones615/C8chat/issues"
+  },
+  "homepage": "https://github.com/DionJones615/C8chat",
+  "keywords": [
+    "castle-infinity",
+    "browser-extension",
+    "manifest-v3",
+    "firefox",
+    "chrome-extension",
+    "chat"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "package": "node scripts/package.mjs",
+    "package:unpacked": "node scripts/package.mjs --unpacked",
+    "lint": "npm run package:unpacked && web-ext lint --source-dir dist/unpacked --self-hosted --warnings-as-errors",
+    "check": "npm run lint && npm test && npm run package",
+    "smoke": "node scripts/smoke-chromium.mjs",
+    "version:check": "node scripts/check-version.mjs"
+  },
+  "devDependencies": {
+    "fflate": "0.8.3",
+    "web-ext": "10.8.0"
+  }
+}

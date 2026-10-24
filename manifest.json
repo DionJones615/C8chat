@@ -1,0 +1,81 @@
+{
+  "manifest_version": 3,
+  "name": "C8 Chat",
+  "version": "1.1.0",
+  "minimum_chrome_version": "121",
+  "description": "Unofficial chat panel for Castle Infinity: room transcript, schtick heads, who is here, private messages, docked or floating.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "c8-chat@dionjones615.github.io",
+      "strict_min_version": "142.0",
+      "update_url": "https://dionjones615.github.io/C8chat/updates.json",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.castleinfinity.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.castleinfinity.com/*"
+      ],
+      "js": [
+        "src/protocol.js",
+        "src/agent.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://www.castleinfinity.com/*"
+      ],
+      "js": [
+        "src/panel.js"
+      ],
+      "run_at": "document_idle",
+      "world": "ISOLATED",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "scripts": [
+      "src/background.js"
+    ]
+  },
+  "action": {
+    "default_title": "C8 Chat",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "64": "icons/icon-64.png",
+    "128": "icons/icon-128.png"
+  },
+  "incognito": "not_allowed",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/panel.css"
+      ],
+      "matches": [
+        "https://www.castleinfinity.com/*"
+      ]
+    }
+  ]
+}
