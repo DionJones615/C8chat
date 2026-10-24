@@ -14,7 +14,7 @@ protocol, agent, panel, site-access, manifest, package-archive, and repository
 layout. `npm run lint` packages `dist/unpacked` and runs:
 
 ```sh
-web-ext lint --source-dir dist/unpacked --warnings-as-errors
+addons-linter dist/unpacked --self-hosted --warnings-as-errors
 ```
 
 The deterministic test harnesses cover the toolbar button, chat

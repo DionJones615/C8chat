@@ -40,7 +40,7 @@ jobs:
           WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
         run: |
-          npx web-ext sign \
+          npx --yes web-ext@10.8.0 sign \
             --source-dir dist/unpacked \
             --artifacts-dir dist/signed \
             --channel unlisted \

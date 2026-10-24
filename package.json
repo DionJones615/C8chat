@@ -28,13 +28,13 @@
     "test": "node --test test/*.test.mjs",
     "package": "node scripts/package.mjs",
     "package:unpacked": "node scripts/package.mjs --unpacked",
-    "lint": "npm run package:unpacked && web-ext lint --source-dir dist/unpacked --self-hosted --warnings-as-errors",
+    "lint": "npm run package:unpacked && addons-linter dist/unpacked --self-hosted --warnings-as-errors",
     "check": "npm run lint && npm test && npm run package",
     "smoke": "node scripts/smoke-chromium.mjs",
     "version:check": "node scripts/check-version.mjs"
   },
   "devDependencies": {
-    "fflate": "0.8.3",
-    "web-ext": "10.8.0"
+    "addons-linter": "10.14.0",
+    "fflate": "0.8.3"
   }
 }

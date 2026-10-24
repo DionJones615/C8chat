@@ -24,7 +24,8 @@ npm ci
 npm run check
 ```
 
-`npm run check` packages the unpacked extension, runs `web-ext lint`, runs the
+`npm run check` packages the unpacked extension, runs the AMO linter
+(`addons-linter`), runs the
 Node test suite, and builds the release archives. The individual commands are:
 
 ```sh

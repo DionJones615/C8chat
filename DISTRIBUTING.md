@@ -75,13 +75,15 @@ package once through the AMO Developer Hub:
 
 If the signing workflow created the add-on, open its entry in the AMO Developer
 Hub and complete the metadata (name, summary, MIT license, privacy-policy URL,
-and reviewer notes). `web-ext sign` does not set those for a new add-on; the
+and reviewer notes). `web-ext sign` (fetched by `npx` only in the signing
+workflow, because its `node-forge` chain is what the Dependabot alert tracks)
+does not set those for a new add-on; the
 manifest already declares `data_collection_permissions: none`.
 
 The signing workflow runs:
 
 ```sh
-npx web-ext sign \
+npx --yes web-ext@10.8.0 sign \
   --source-dir dist/unpacked \
   --artifacts-dir dist/signed \
   --channel unlisted \

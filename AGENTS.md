@@ -2,7 +2,7 @@
 
 Workspace instructions for anyone (human or agent) working in this repo. The
 project is a dependency-free MV3 extension for https://www.castleinfinity.com;
-there is no build step, only `web-ext` packaging.
+there is no build step, only `scripts/package.mjs` packaging.
 
 ## Why the manifest uses required host access
 
