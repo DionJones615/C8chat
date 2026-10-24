@@ -9,12 +9,16 @@ chat. It shows the room transcript, the game's character heads, who is in the
 room, and private messages. The panel can float, dock left, or dock right.
 
 C8 Chat is a Manifest V3 extension with no runtime dependencies and no developer
-server. It runs only on `https://www.castleinfinity.com/*`. The extension code is plain
-JavaScript, CSS, and JSON; packaging validates the manifest, stages the Firefox
-and Chromium manifest shapes, and writes the archives.
+server. It runs only on `https://www.castleinfinity.com/*`. The extension code is
+plain JavaScript, CSS, and JSON; packaging validates the manifest, stages the
+Firefox and Chromium manifest shapes, and writes the archives.
 
 C8 Chat is not affiliated with Castle Infinity, its preservation project, or any
 rights holder.
+
+<p align="center">
+  <img src="docs/images/c8-chat-panel.jpg" alt="C8 Chat panel showing room chat, a private message in a yellow balloon, and the message composer" width="360">
+</p>
 
 ## Features
 
