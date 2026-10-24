@@ -8,7 +8,7 @@ browser family from the latest release:
 ## Chromium-based browsers
 
 Chrome, Chromium, Edge, Brave, Vivaldi, Opera, and other Chromium-based
-browsers use the same unpacked package.
+browsers use the same unpacked package. Requires Chromium 121 or newer.
 
 1. Download [`c8-chat-chrome.zip`](https://github.com/DionJones615/C8chat/releases/latest/download/c8-chat-chrome.zip).
 2. Extract the ZIP to a permanent folder. The folder must contain `manifest.json`
@@ -31,7 +31,7 @@ managed browsers may block developer-mode extensions by policy.
 ## Firefox-based browsers
 
 Firefox, LibreWolf, Waterfox, and other Firefox-based browsers use the signed
-XPI.
+XPI. Requires Firefox 142 or newer.
 
 1. Download [`c8-chat-firefox-signed.xpi`](https://github.com/DionJones615/C8chat/releases/latest/download/c8-chat-firefox-signed.xpi).
 2. Open `about:addons`, click the gear button, and choose **Install Add-on From
@@ -40,8 +40,8 @@ XPI.
 4. Open <https://www.castleinfinity.com/> and reload the tab. Click the C8 Chat
    toolbar icon to focus an open game tab, or open a new one.
 
-The signed XPI is the supported Firefox-based build and updates through the
-extension's `update_url`. The unsigned XPI on the release page is for
+The signed XPI is the supported Firefox-based build; Firefox updates it through
+the extension's `update_url`. The unsigned XPI on the release page is for
 development, or for forks that explicitly allow unsigned add-ons; stock Firefox
 requires the signed build.
 
