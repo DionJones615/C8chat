@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var CH = '__c8_companion__';
+  var CH = '__c8_chat__';
   var PANEL_CSS = '';
 
   /* ------------------------------------------------------------------ state */

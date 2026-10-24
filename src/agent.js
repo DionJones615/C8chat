@@ -17,13 +17,42 @@
 (function () {
   'use strict';
 
+  var CH = '__c8_chat__';
+  var CH_LEGACY = '__c8_companion__';    // the bridge name before the rename
+
   // A page can retain the MAIN-world agent after an extension reload. Make
   // reinjection idempotent so each command and key reaches the game once.
-  if (window.__c8CompanionAgentInstalled) return;
-  window.__c8CompanionAgentInstalled = true;
+  if (window.__c8ChatAgentInstalled) return;
+  window.__c8ChatAgentInstalled = true;
+
+  // A retained agent from before the rename still owns the page's WebSocket
+  // wrapper and speaks the legacy bridge name. Re-wrapping on top of it would
+  // lose the live socket, so relay both ways instead: the panel's commands go
+  // out under the legacy name, and the retained agent's events come back under
+  // this one. One rename's worth of shim; drop it once no page can still run
+  // the old build.
+  if (window.__c8CompanionAgentInstalled) {
+    window.addEventListener('message', function (ev) {
+      if (ev.source !== null && ev.source !== window) return;
+      if (ev.origin !== window.location.origin) return;
+      var d = ev.data;
+      if (!d || (d[CH] !== 1 && d[CH_LEGACY] !== 1)) return;
+      if (d.k === 'cmd' && d[CH] === 1 && d[CH_LEGACY] !== 1) {
+        var out = {};
+        for (var k in d) out[k] = d[k];
+        out[CH_LEGACY] = 1;
+        post(out);
+      } else if (d.k !== 'cmd' && d[CH_LEGACY] === 1 && d[CH] !== 1) {
+        var inc = {};
+        for (var n in d) inc[n] = d[n];
+        inc[CH] = 1;
+        post(inc);
+      }
+    });
+    return;
+  }
 
   var Proto = window.C8Proto;
-  var CH = '__c8_companion__';
 
   function post(msg) {
     msg[CH] = 1;

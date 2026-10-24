@@ -14,6 +14,12 @@ All notable changes to C8 Chat are documented here. The format follows
   accident. **That's OK** reveals it for that room visit, and the transcript keeps
   filling behind the notice.
 
+### Changed
+
+- The panel↔agent bridge marker is `__c8_chat__` (was `__c8_companion__`, an old
+  name). A page that kept the previous build's agent across an extension reload is
+  bridged by a small relay, so the panel works there without a tab reload.
+
 ## [1.1.0] - 2026-10-24
 
 ### Added

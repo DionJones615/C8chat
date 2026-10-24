@@ -15,7 +15,7 @@ import vm from 'node:vm';
 const protoSrc = readFileSync(new URL('../src/protocol.js', import.meta.url), 'utf8');
 const agentSrc = readFileSync(new URL('../src/agent.js', import.meta.url), 'utf8');
 
-function makeEnv() {
+function makeEnv(staleAgent) {
   const winHandlers = {};
   const timers = [];
   const prototypeSends = [];
@@ -43,6 +43,7 @@ function makeEnv() {
     postMessage: (msg) => posted.push(msg)
   };
   win.window = win;
+  if (staleAgent) win.__c8CompanionAgentInstalled = true;   // a pre-rename build
 
   const document = {
     getElementById: (id) => (id === 'c8-chat-host' ? host : null),
@@ -73,7 +74,7 @@ function makeEnv() {
   const fire = (type, ev) => (winHandlers[type] || []).forEach((fn) => fn(ev));
   const cmd = (name, args, source = win, origin = win.location.origin) => fire('message', {
     source, origin,
-    data: { __c8_companion__: 1, k: 'cmd', id: 1, cmd: name, args }
+    data: { __c8_chat__: 1, k: 'cmd', id: 1, cmd: name, args }
   });
   const keyMsgs = () => posted.filter((m) => m && m.k === 'key');
   return { ctx, win, host, input, shadow, fire, cmd, keyMsgs, posted, prototypeSends, timers, runNextTimer(ms) { const timer = timers.find((t) => !t.ran && !t.cleared && t.ms === ms); if (!timer) return false; timer.ran = true; timer.fn(); return true; } };
@@ -93,12 +94,39 @@ const fromPage = (env, key) => ({
   composedPath: () => [{ tagName: 'CANVAS' }, env.win.document]
 });
 
+test('a retained pre-rename agent is relayed, not doubled', () => {
+  const env = makeEnv(true);
+  assert.equal(env.win.__c8ChatAgentInstalled, true);
+  assert.notEqual(env.win.WebSocket.__c8wrapped, true, 'the retained wrapper stays the only one');
+
+  env.cmd('status', {});
+  const cmd = env.posted.find((m) => m && m.k === 'cmd');
+  assert.equal(cmd.__c8_chat__, 1, 'the panel speaks the new name');
+  assert.equal(cmd.__c8_companion__, 1, 'and the retained agent hears the old one');
+
+  env.fire('message', {
+    source: null, origin: env.win.location.origin,
+    data: { __c8_companion__: 1, k: 'reply', id: cmd.id, ok: true, value: { ready: true } }
+  });
+  const replies = env.posted.filter((m) => m && m.k === 'reply');
+  assert.equal(replies.length, 1, 'exactly one relayed reply');
+  assert.equal(replies[0].__c8_chat__, 1, 'the reply comes back under the new name');
+
+  env.fire('message', {
+    source: null, origin: env.win.location.origin,
+    data: { __c8_companion__: 1, k: 'frame', frame: { t: 1 } }
+  });
+  const frames = env.posted.filter((m) => m && m.k === 'frame');
+  assert.equal(frames.length, 1, 'exactly one relayed frame');
+  assert.equal(frames[0].__c8_chat__, 1);
+});
+
 test('reinjection leaves one MAIN-world command listener and one WebSocket wrapper', () => {
   const env = makeEnv();
   const wrapped = env.win.WebSocket;
   vm.runInContext(agentSrc, env.ctx);
   assert.equal(env.win.WebSocket, wrapped, 'second injection must preserve the first wrapper');
-  assert.equal((env.ctx.window && env.ctx.window.__c8CompanionAgentInstalled), true);
+  assert.equal((env.ctx.window && env.ctx.window.__c8ChatAgentInstalled), true);
   const before = env.posted.length;
   env.cmd('status', {});
   assert.equal(env.posted.slice(before).filter((m) => m && m.k === 'reply').length, 1);
@@ -149,7 +177,7 @@ test('room say rejects unavailable input and Unicode before injecting any key', 
   env.win.Module = { arguments: [], _c8_inject_key() {}, _c8_inject_text_key() {} };
   const send = (text, id) => env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'cmd', id: id, cmd: 'say', args: { text: text } }
+    data: { __c8_chat__: 1, k: 'cmd', id: id, cmd: 'say', args: { text: text } }
   });
 
   env.win.Module._c8_inject_text_key = null;
@@ -174,7 +202,7 @@ test('the agent reports only actually injected characters and serializes public 
   };
   const fireCmd = (id, text) => env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'cmd', id: id, cmd: 'say', args: { text: text } }
+    data: { __c8_chat__: 1, k: 'cmd', id: id, cmd: 'say', args: { text: text } }
   });
 
   fireCmd(21, 'ab');

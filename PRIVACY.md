@@ -89,7 +89,7 @@ and to messages you send through it.
 
 ## Children
 
-C8 Chat is a companion tool for a game intended for nostalgic adult players. It
+C8 Chat is an unofficial add-on for a game intended for nostalgic adult players. It
 does not knowingly collect personal information from children and has no server
 to receive it.
 

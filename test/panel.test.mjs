@@ -247,7 +247,7 @@ function load(env) {
 function frame(env, decoded, t, source = env.win, origin = env.win.location.origin) {
   env.fire('message', {
     source, origin,
-    data: { __c8_companion__: 1, k: 'frame', frame: { t: t || Date.now(), decoded } }
+    data: { __c8_chat__: 1, k: 'frame', frame: { t: t || Date.now(), decoded } }
   });
 }
 
@@ -256,14 +256,14 @@ function gameReady(env, user) {
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
     data: {
-      __c8_companion__: 1, k: 'ready',
+      __c8_chat__: 1, k: 'ready',
       status: { ready: true, user: user || 'Blasto', hasFs: false, canInject: true, canType: true }
     }
   });
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
     data: {
-      __c8_companion__: 1, k: 'state',
+      __c8_chat__: 1, k: 'state',
       state: { packed: 0x3c, inStella: false, a: '', b: '', c: '', en: { a: true, b: true, c: true, stella: true } }
     }
   });
@@ -702,7 +702,7 @@ test('an empty recipient talks to the room, retaining its draft pending a reply'
   assert.equal(env.el('chat-send').disabled, true, 'a second submission is locked');
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'reply', id: c[0].id, value: { ok: true, typed: 10 } }
+    data: { __c8_chat__: 1, k: 'reply', id: c[0].id, value: { ok: true, typed: 10 } }
   });
   return tick().then(() => {
     assert.equal(env.el('chat-text').value, '', 'successful acknowledgement clears the draft');
@@ -741,7 +741,7 @@ test('rapid public submissions are single-flight and do not replace the active d
   assert.equal(env.el('chat-text').value, 'second');
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'reply', id: first.id, value: { ok: true, typed: 5 } }
+    data: { __c8_chat__: 1, k: 'reply', id: first.id, value: { ok: true, typed: 5 } }
   });
   await tick();
   assert.equal(env.el('chat-text').value, 'second', 'user edits made during send are preserved');
@@ -763,7 +763,7 @@ test('chat still sends when the game input API is ready but the state callback w
   load(env);
   gameReady(env);
   env.fire('message', { source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'state', state: null } });
+    data: { __c8_chat__: 1, k: 'state', state: null } });
   say(env, 'hello room');
   assert.equal(cmds(env, 'say').length, 1, 'missing state hook is not treated as the game rejecting input');
 });
@@ -773,7 +773,7 @@ test('chat is refused when the game explicitly says it is not accepting input', 
   load(env);
   gameReady(env);
   env.fire('message', { source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'state', state: { en: { stella: false } } } });
+    data: { __c8_chat__: 1, k: 'state', state: { en: { stella: false } } } });
   say(env, 'hello room');
   assert.equal(cmds(env, 'say').length, 0);
 });
@@ -789,7 +789,7 @@ test('an outgoing room message is shown from the game WebSocket echo only once',
   // the agent replies only after it has finished typing the text into the game
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'reply', id: c.id, ok: true, value: { typed: 10 } }
+    data: { __c8_chat__: 1, k: 'reply', id: c.id, ok: true, value: { typed: 10 } }
   });
   await new Promise((r) => setImmediate(r));
 
@@ -797,7 +797,7 @@ test('an outgoing room message is shown from the game WebSocket echo only once',
     'a successful key-injection reply is not itself a chat message');
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'frame', frame: {
+    data: { __c8_chat__: 1, k: 'frame', frame: {
       t: Date.now(), dir: 'out', decoded: [{ kind: 'speech', actor: 'NRBw', text: 'hello room ' }]
     } }
   });
@@ -818,7 +818,7 @@ test('the client re-sending the whole balloon does not double the line', () => {
   gameReady(env, 'Blasto');
   const out = (text, t) => env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'frame', frame: {
+    data: { __c8_chat__: 1, k: 'frame', frame: {
       t, dir: 'out', decoded: [{ kind: 'speech', actor: 'NRBw', text }]
     } }
   });
@@ -1043,7 +1043,7 @@ test('the page console is mirrored into the diagnostics record', () => {
   load(env);
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'console', errors: [{ text: 'TypeError: boom', n: 3 }] }
+    data: { __c8_chat__: 1, k: 'console', errors: [{ text: 'TypeError: boom', n: 3 }] }
   });
   const diag = env.intervals.find((i) => i.ms === 5000);
   assert.ok(diag, 'the diagnostics writer is not scheduled');
@@ -1053,7 +1053,7 @@ test('the page console is mirrored into the diagnostics record', () => {
 
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
-    data: { __c8_companion__: 1, k: 'console', errors: 'nonsense' }
+    data: { __c8_chat__: 1, k: 'console', errors: 'nonsense' }
   });
   diag.fn();
   assert.deepEqual(JSON.parse(env.saved.at(-1).diagJson).page, [], 'a malformed report is dropped');
@@ -1312,7 +1312,7 @@ function speechFrame(dir, actor, text, t) {
 }
 
 function send(env, frame, source = env.win, origin = env.win.location.origin) {
-  env.fire('message', { source, origin, data: { __c8_companion__: 1, k: 'frame', frame: frame } });
+  env.fire('message', { source, origin, data: { __c8_chat__: 1, k: 'frame', frame: frame } });
 }
 
 const settle = () => new Promise((r) => setTimeout(r, 2700));   // past the 2500ms unpunctuated idle
@@ -1379,7 +1379,7 @@ test('routine traffic and the map do not spam the log', () => {
   ['keepalive', 'sync', 'greet', 'login', 'server-assign', 'sector-list', 'sector-query', 'sector-range'].forEach((name, i) => {
     env.fire('message', {
       source: env.win, origin: env.win.location.origin,
-      data: { __c8_companion__: 1, k: 'frame', frame: { t: t + i, dir: 'in', name, n: 20, strings: ['000H', '020H'], hex: 'aa bb cc' } }
+      data: { __c8_chat__: 1, k: 'frame', frame: { t: t + i, dir: 'in', name, n: 20, strings: ['000H', '020H'], hex: 'aa bb cc' } }
     });
   });
   assert.equal(env.el('chatlog').children.length, 0, 'quiet types must stay out of the chat log');
@@ -1391,7 +1391,7 @@ test('a hex blob is not mistaken for prose', () => {
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
     data: {
-      __c8_companion__: 1, k: 'frame',
+      __c8_chat__: 1, k: 'frame',
       frame: { t: Date.now(), dir: 'in', name: 'type-20', n: 40, strings: ['8412d46a00000000d98f3a382a9fe2f1582e4e19d3d2249d'], hex: 'aa' }
     }
   });
@@ -1707,7 +1707,7 @@ const HEADS = '/release/art/schtick/heads';
 
 const reply = (env, c, value) => env.fire('message', {
   source: env.win, origin: env.win.location.origin,
-  data: { __c8_companion__: 1, k: 'reply', id: c.id, value }
+  data: { __c8_chat__: 1, k: 'reply', id: c.id, value }
 });
 
 /**
@@ -1862,7 +1862,7 @@ test('a partly typed room message is not offered back whole', async () => {
   env.fire('message', {
     source: env.win, origin: env.win.location.origin,
     data: {
-      __c8_companion__: 1, k: 'reply', id: c.id,
+      __c8_chat__: 1, k: 'reply', id: c.id,
       value: { ok: false, typed: 6, error: 'The game stopped accepting input before the message was sent.' }
     }
   });

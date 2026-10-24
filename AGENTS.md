@@ -89,7 +89,7 @@ To exercise rendering that needs game data, load a copy whose manifest keeps onl
 the panel's content script and impersonate the agent from the page:
 
 ```js
-window.postMessage({ __c8_companion__: 1, k: 'reply', id, ok: true, value });
+window.postMessage({ __c8_chat__: 1, k: 'reply', id, ok: true, value });
 ```
 
 That lets `readDir`/`readBytes` answer with a synthetic BMP, which is how the
