@@ -34,7 +34,7 @@
     "version:check": "node scripts/check-version.mjs"
   },
   "devDependencies": {
-    "addons-linter": "10.14.0",
+    "addons-linter": "10.15.0",
     "fflate": "0.8.3"
   }
 }
